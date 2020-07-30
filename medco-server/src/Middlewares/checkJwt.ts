@@ -1,21 +1,22 @@
-import { encode, decode, TAlgorithm } from 'jwt-simple';
+import { encode, decode, TAlgorithm } from "jwt-simple";
 import {
   PartialSession,
   EncodeResult,
   ISession,
   DecodeResult,
   ExpirationStatus,
-} from '../Types/auth';
+} from "../Types/auth";
 
-import { Request, Response, NextFunction } from 'express';
-import { IUser } from '../Types';
-import AuthKey from '../config/config';
+import { Request, Response, NextFunction } from "express";
+import { IUser } from "../Types";
+import AuthKey from "../config/config";
+// Always use HS512 to sign the token
+const algorithm: TAlgorithm = "HS512";
+
 export function encodeSession(
   secretKey: string,
   partialSession: PartialSession
 ): EncodeResult {
-  // Always use HS512 to sign the token
-  const algorithm: TAlgorithm = 'HS512';
   // Determine when the token should expire
   const issued: number = Date.now();
   const fifteenMinutesInMs = 15 * 60 * 1000;
@@ -39,40 +40,37 @@ export function decodeSession(
   secretKey: string,
   tokenString: string
 ): DecodeResult {
-  // Always use HS512 to decode the token
-  const algorithm: TAlgorithm = 'HS512';
-
   let result: ISession;
 
   try {
-    result = decode(tokenString, secretKey, false, algorithm);
+    result = decode(tokenString, secretKey, undefined, algorithm);
   } catch (_e) {
     const e: Error = _e;
 
     // These error strings can be found here:
     // https://github.com/hokaccha/node-jwt-simple/blob/c58bfe5e5bb049015fcd55be5fc1b2d5c652dbcd/lib/jwt.js
     if (
-      e.message === 'No token supplied' ||
-      e.message === 'Not enough or too many segments'
+      e.message === "No token supplied" ||
+      e.message === "Not enough or too many segments"
     ) {
       return {
-        type: 'invalid-token',
+        type: "invalid-token",
       };
     }
 
     if (
-      e.message === 'Signature verification failed' ||
-      e.message === 'Algorithm not supported'
+      e.message === "Signature verification failed" ||
+      e.message === "Algorithm not supported"
     ) {
       return {
-        type: 'integrity-error',
+        type: "integrity-error",
       };
     }
 
     // Handle json parse errors, thrown when the payload is nonsense
-    if (e.message.indexOf('Unexpected token') === 0) {
+    if (e.message.indexOf("Unexpected token") === 0) {
       return {
-        type: 'invalid-token',
+        type: "invalid-token",
       };
     }
 
@@ -80,7 +78,7 @@ export function decodeSession(
   }
 
   return {
-    type: 'valid',
+    type: "valid",
     session: result,
   };
 }
@@ -88,15 +86,15 @@ export function decodeSession(
 export function checkExpirationStatus(token: ISession): ExpirationStatus {
   const now = Date.now();
 
-  if (token.expires > now) return 'active';
+  if (token.expires > now) return "active";
 
   // Find the timestamp for the end of the token's grace period
   const threeHoursInMs = 3 * 60 * 60 * 1000;
   const threeHoursAfterExpiration = token.expires + threeHoursInMs;
 
-  if (threeHoursAfterExpiration > now) return 'grace';
+  if (threeHoursAfterExpiration > now) return "grace";
 
-  return 'expired';
+  return "expired";
 }
 
 /**
@@ -114,8 +112,8 @@ export function requireJwtMiddleware(
       message: message,
     });
 
-  const requestHeader = 'auth-cookie';
-  const responseHeader = 'auth-cookie';
+  const requestHeader = "auth-cookie";
+  const responseHeader = "auth-cookie";
   const header = request.header(requestHeader);
 
   if (!header) {
@@ -123,11 +121,11 @@ export function requireJwtMiddleware(
     return;
   }
 
-  const decodedSession: DecodeResult = decodeSession('SECRET_KEY_HERE', header);
+  const decodedSession: DecodeResult = decodeSession("SECRET_KEY_HERE", header);
 
   if (
-    decodedSession.type === 'integrity-error' ||
-    decodedSession.type === 'invalid-token'
+    decodedSession.type === "integrity-error" ||
+    decodedSession.type === "invalid-token"
   ) {
     unauthorized(
       `Failed to decode or validate authorization token. Reason: ${decodedSession.type}.`
@@ -139,7 +137,7 @@ export function requireJwtMiddleware(
     decodedSession.session
   );
 
-  if (expiration === 'expired') {
+  if (expiration === "expired") {
     unauthorized(
       `Authorization token has expired. Please create a new authorization token.`
     );
@@ -148,7 +146,7 @@ export function requireJwtMiddleware(
 
   let session: ISession;
 
-  if (expiration === 'grace') {
+  if (expiration === "grace") {
     // Automatically renew the session and send it back with the response
     const { token, expires, issued } = encodeSession(
       AuthKey.jwtSecret,
@@ -174,15 +172,32 @@ export function requireJwtMiddleware(
   // Request has a valid or renewed session. Call next to continue to the authenticated route handler
   next();
 }
-
-export function setToken(request: Request, response: Response, user: IUser) {
+export function getToken(request: Request, response: Response, user: IUser) {
   const partialSession = {
     id: 45645,
     username: user.username,
     dateCreated: Date.now(),
   };
   const { token } = encodeSession(AuthKey.jwtSecret, partialSession);
-  const responseHeader = 'auth-cookie';
-
+  return token;
+}
+export function setToken(request: Request, response: Response, user: IUser) {
+  const token = getToken(request,response,user)
+  const responseHeader = "auth-cookie";
   response.setHeader(responseHeader, token);
+}
+
+export function getUsernamefromToken(request: Request) {
+  const requestHeader = "auth-cookie";
+  const header = request.header(requestHeader);
+  if (header) {
+    const decodedSession: DecodeResult = decodeSession(
+      "SECRET_KEY_HERE",
+      header
+    );
+    if (decodedSession.type === "valid") {
+      return decodedSession.session.username;
+    }
+  }
+  return undefined;
 }

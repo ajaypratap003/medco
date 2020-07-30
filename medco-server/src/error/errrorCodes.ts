@@ -1,4 +1,4 @@
-enum StatuCode {
+enum StatusCode {
   INVLAID = 400,
 }
 
@@ -10,4 +10,4 @@ enum UserSignUp_ErrorCode {
   ERR_CODE_NO_CONTACT_NUMBER = 10004,
 }
 
-export { StatuCode, UserSignUp_ErrorCode };
+export { StatusCode, UserSignUp_ErrorCode };

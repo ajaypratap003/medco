@@ -1,15 +1,16 @@
-import { Request, Response } from 'express';
-import { IUser, IUserResponseVO } from '../Types';
-import { validateUserForm } from '../Utils';
-import { StatuCode } from '../Error';
-import { setToken } from '../Middlewares';
-import debugMod from 'debug';
+import { Request, Response } from "express";
+import { IUser, IUserResponseVO } from "../Types";
+import { validateUserForm, validateUserDetail } from "../Utils";
+import { StatusCode } from "../error";
+import { setToken, getUsernamefromToken } from "../Middlewares";
+import debugMod from "debug";
 
-const debug = debugMod('api');
+const debug = debugMod("api");
 // import { User } from "../entity/User";
 
 class UserController {
   static listAll = async (req: Request, res: Response) => {
+    res.status(200).send({ res: "listAll" });
     //Get users from database
     //   const userRepository = getRepository(User);
     //   const users = await userRepository.find({
@@ -20,8 +21,11 @@ class UserController {
   };
 
   static getOneById = async (req: Request, res: Response) => {
-    //Get the ID from the url
-    //   const id: number = req.params.id;
+    // res.status(200).send({ res: "getOneById" });
+    // Get the ID from the url
+    const id = req.params.id;
+    const username = getUsernamefromToken(req);
+    res.status(200).send({ res: { id: id, username: username } });
     //   //Get the user from database
     //   const userRepository = getRepository(User);
     //   try {
@@ -33,11 +37,25 @@ class UserController {
     //   }
   };
 
+  static loginUser = async (req: Request, res: Response) => {
+    const user: IUser = req.body;
+    const err = validateUserDetail(user);
+    if (err) {
+      res.status(StatusCode.INVLAID).send(err);
+    } else {
+      setToken(req, res, user);
+      const response: { username: string } = { username: user.username };
+      debug("test", res);
+      res.status(200).send(response);
+    }
+  };
+
   static newUser = async (req: Request, res: Response) => {
-    const user: IUser = req.body.user;
+    // console.log(req.body)
+    const user: IUser = req.body;
     const err = validateUserForm(user);
     if (err) {
-      res.status(StatuCode.INVLAID).send(err);
+      res.status(StatusCode.INVLAID).send(err);
     } else {
       const response: IUserResponseVO = {
         firstname: user.firstname,
@@ -48,8 +66,8 @@ class UserController {
       };
       setToken(req, res, user);
 
-      console.log('response', res);
-      debug("test",res);
+      console.log("response", res);
+      debug("test", res);
       res.status(200).send(response);
     }
     //Get parameters from the body
@@ -79,6 +97,7 @@ class UserController {
   };
 
   static editUser = async (req: Request, res: Response) => {
+    res.status(200).send({ res: "editUser" });
     //Get the ID from the url
     //   const id = req.params.id;
     //   //Get values from the body

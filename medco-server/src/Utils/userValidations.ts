@@ -1,43 +1,43 @@
-import { IUser, IErrorCodeMessage, IError } from '../Types';
+import { IUser, IErrorCodeMessage, IError } from "../Types";
 import {
   UserSignUp_ErrorCode,
-  StatuCode,
+  StatusCode,
   UserSignUp_ErrorMessage,
-} from '../Error';
+} from "../error";
 
 const validateUserForm = (user: IUser) => {
   let errors: IErrorCodeMessage[] = [];
   if (user) {
     const { username, email, firstname, number, password } = user;
-    if (!username || username === '') {
+    if (!username || username === "") {
       let err: IErrorCodeMessage = {
         errorCode: UserSignUp_ErrorCode.ERR_CODE_NO_USERNAME,
         errorMessage: UserSignUp_ErrorMessage.ERR_CODE_NO_USERNAME,
       };
       errors = [...errors, err];
     }
-    if (!email || email === '') {
+    if (!email || email === "") {
       let err: IErrorCodeMessage = {
         errorCode: UserSignUp_ErrorCode.ERR_CODE_NO_EMAIL,
         errorMessage: UserSignUp_ErrorMessage.ERR_CODE_NO_EMAIL,
       };
       errors = [...errors, err];
     }
-    if (!firstname || firstname === '') {
+    if (!firstname || firstname === "") {
       let err: IErrorCodeMessage = {
         errorCode: UserSignUp_ErrorCode.ERR_CODE_NO_FIRSTNAME,
         errorMessage: UserSignUp_ErrorMessage.ERR_CODE_NO_FIRSTNAME,
       };
       errors = [...errors, err];
     }
-    if (!password || password === '') {
+    if (!password || password === "") {
       let err: IErrorCodeMessage = {
         errorCode: UserSignUp_ErrorCode.ERR_CODE_NO_PASSWORD,
         errorMessage: UserSignUp_ErrorMessage.ERR_CODE_NO_PASSWORD,
       };
       errors = [...errors, err];
     }
-    if (!number || number === '') {
+    if (!number || number === "") {
       let err: IErrorCodeMessage = {
         errorCode: UserSignUp_ErrorCode.ERR_CODE_NO_CONTACT_NUMBER,
         errorMessage: UserSignUp_ErrorMessage.ERR_CODE_NO_CONTACT_NUMBER,
@@ -47,9 +47,9 @@ const validateUserForm = (user: IUser) => {
   }
   if (errors && errors.length > 0) {
     const error: IError = {
-      statusCode: StatuCode.INVLAID,
+      statusCode: StatusCode.INVLAID,
 
-      errorMessage: 'Signup Form Validation Error',
+      errorMessage: "Signup Form Validation Error",
       errors: errors,
     };
     return error;
@@ -58,4 +58,36 @@ const validateUserForm = (user: IUser) => {
   }
 };
 
-export { validateUserForm };
+const validateUserDetail = (user: IUser) => {
+  let errors: IErrorCodeMessage[] = [];
+  if (user) {
+    const { username, password } = user;
+    if (!username || username === "") {
+      let err: IErrorCodeMessage = {
+        errorCode: UserSignUp_ErrorCode.ERR_CODE_NO_USERNAME,
+        errorMessage: UserSignUp_ErrorMessage.ERR_CODE_NO_USERNAME,
+      };
+      errors = [...errors, err];
+    }
+    if (!password || password === "") {
+      let err: IErrorCodeMessage = {
+        errorCode: UserSignUp_ErrorCode.ERR_CODE_NO_PASSWORD,
+        errorMessage: UserSignUp_ErrorMessage.ERR_CODE_NO_PASSWORD,
+      };
+      errors = [...errors, err];
+    }
+  }
+  if (errors && errors.length > 0) {
+    const error: IError = {
+      statusCode: StatusCode.INVLAID,
+
+      errorMessage: "Signup Form Validation Error",
+      errors: errors,
+    };
+    return error;
+  } else {
+    return undefined;
+  }
+};
+
+export { validateUserForm, validateUserDetail };
